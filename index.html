@@ -1,0 +1,2477 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>From Degree to Desk - Jonathan Thomas</title>
+
+    <!-- Google Fonts: Outfit (Display) + Plus Jakarta Sans (Body) + Space Grotesk (Mono/Accents) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Space+Grotesk:wght@500;600;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        /* ===========================================
+           DESIGN SYSTEM & CSS CUSTOM PROPERTIES
+           Theme: Royal Blue & Azure (Style 2)
+           =========================================== */
+        :root {
+            /* Canvas & Surfaces */
+            --stage-bg: #0B1120;
+            --slide-bg: #F8FAFD;
+            --card-surface: #FFFFFF;
+            --card-subtle: #F1F5F9;
+
+            /* Inks */
+            --ink-primary: #0A0F1D;
+            --ink-secondary: #334155;
+            --ink-muted: #64748B;
+            --ink-faint: #94A3B8;
+
+            /* Brand & Accents */
+            --blue-primary: #2563EB;
+            --blue-hover: #1D4ED8;
+            --blue-subtle: #EFF6FF;
+            --azure-accent: #06B6D4;
+            --border-line: #E2E8F0;
+            --border-highlight: rgba(37, 99, 235, 0.35);
+
+            /* Typography */
+            --font-display: 'Outfit', -apple-system, sans-serif;
+            --font-body: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            --font-mono: 'Space Grotesk', monospace;
+
+            /* Motion */
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --duration-normal: 0.65s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ===========================================
+           FIXED 16:9 STAGE BASE
+           =========================================== */
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background: var(--stage-bg);
+            font-family: var(--font-body);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .deck-viewport {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            background: var(--stage-bg);
+        }
+
+        .deck-stage {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            transform-origin: 0 0;
+            background: var(--slide-bg);
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            display: block;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            background: var(--slide-bg);
+            transition: opacity 0.4s ease;
+        }
+
+        .slide.active,
+        .slide.visible {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 1;
+        }
+
+        img,
+        video,
+        canvas,
+        svg {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* Floating Bottom-Right Slide Nav (Subtle & Compact) */
+        .deck-controls {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(10, 15, 29, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 4px 10px;
+            border-radius: 999px;
+            color: #FFFFFF;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+            opacity: 0.65;
+            transition: opacity 0.25s ease, transform 0.2s ease;
+        }
+
+        .deck-controls:hover {
+            opacity: 1;
+            transform: scale(1.02);
+        }
+
+        .ctrl-btn {
+            background: rgba(255, 255, 255, 0.14);
+            border: none;
+            color: #FFFFFF;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            line-height: 1;
+            transition: background 0.2s;
+        }
+
+        .ctrl-btn:hover {
+            background: var(--blue-primary);
+        }
+
+        .deck-counter {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            color: #E2E8F0;
+            min-width: 48px;
+            text-align: center;
+            user-select: none;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.2s !important;
+            }
+        }
+
+        /* ===========================================
+           SLIDE BASE CANVAS
+           =========================================== */
+        .slide-canvas {
+            position: relative;
+            width: 1920px;
+            height: 1080px;
+            padding: 80px 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 85% 25%, rgba(37, 99, 235, 0.06) 0%, transparent 45%),
+                radial-gradient(circle at 15% 85%, rgba(6, 182, 212, 0.04) 0%, transparent 40%),
+                var(--slide-bg);
+            color: var(--ink-primary);
+        }
+
+        /* Common Slide Header */
+        .slide-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-category-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--font-mono);
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--blue-primary);
+            background: #FFFFFF;
+            border: 1px solid var(--border-line);
+            padding: 10px 22px;
+            border-radius: 999px;
+            box-shadow: 0 4px 12px rgba(10, 15, 29, 0.03);
+        }
+
+        .header-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--blue-primary);
+        }
+
+        /* Entrance Animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(22px);
+            transition: opacity var(--duration-normal) var(--ease-out-expo),
+                transform var(--duration-normal) var(--ease-out-expo);
+        }
+
+        .slide.visible .reveal {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal:nth-child(1) {
+            transition-delay: 0.08s;
+        }
+
+        .reveal:nth-child(2) {
+            transition-delay: 0.16s;
+        }
+
+        .reveal:nth-child(3) {
+            transition-delay: 0.24s;
+        }
+
+        /* ===========================================
+           PHOTO IMAGE CONTAINERS
+           =========================================== */
+        .photo-frame {
+            position: relative;
+            overflow: hidden;
+            border-radius: 28px;
+            box-shadow: 0 20px 50px rgba(10, 15, 29, 0.12);
+        }
+
+        .photo-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center top;
+            display: block;
+            max-width: none;
+            max-height: none;
+        }
+
+        .s2-photo-frame {
+            height: 640px;
+        }
+
+        /* ===========================================
+           SLIDE 1: TITLE SLIDE
+           =========================================== */
+        .title-hero-lockup {
+            position: relative;
+            z-index: 10;
+            max-width: 1100px;
+            margin: auto 0;
+        }
+
+        .title-hero-kicker {
+            font-family: var(--font-body);
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--blue-primary);
+            margin-bottom: 24px;
+        }
+
+        .title-hero-h1 {
+            font-family: var(--font-display);
+            font-size: 136px;
+            font-weight: 900;
+            line-height: 0.92;
+            letter-spacing: -0.05em;
+            text-transform: uppercase;
+            color: var(--ink-primary);
+        }
+
+        .title-hero-h1 span.blue-highlight {
+            color: var(--blue-primary);
+            display: inline-block;
+        }
+
+        .title-hero-sub {
+            font-family: var(--font-body);
+            font-size: 32px;
+            line-height: 1.45;
+            color: var(--ink-secondary);
+            margin-top: 36px;
+            max-width: 860px;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+        }
+
+        .title-sculpture {
+            position: absolute;
+            right: 80px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 640px;
+            height: 640px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .title-prism-back {
+            position: absolute;
+            width: 440px;
+            height: 440px;
+            right: 80px;
+            top: 80px;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(6, 182, 212, 0.08));
+            border: 2px solid rgba(37, 99, 235, 0.25);
+            border-radius: 40px;
+            transform: rotate(-12deg);
+        }
+
+        .title-card-front {
+            position: absolute;
+            width: 380px;
+            height: 380px;
+            right: 140px;
+            top: 140px;
+            background: #FFFFFF;
+            border: 2px solid var(--border-line);
+            border-radius: 36px;
+            transform: rotate(8deg);
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 24px 50px rgba(10, 15, 29, 0.06);
+        }
+
+        .title-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-top: 1px solid var(--border-line);
+            padding-top: 24px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .title-speaker-meta {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+        }
+
+        .speaker-avatar-circle {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--blue-primary), var(--azure-accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            font-family: var(--font-display);
+            font-size: 32px;
+            font-weight: 800;
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+            flex-shrink: 0;
+        }
+
+        .speaker-title-text {
+            font-family: var(--font-display);
+            font-size: 42px;
+            font-weight: 900;
+            color: var(--ink-primary);
+            line-height: 1.1;
+        }
+
+        .speaker-subtitle-text {
+            font-size: 26px;
+            color: var(--blue-primary);
+            font-weight: 700;
+            margin-top: 6px;
+        }
+
+        /* ===========================================
+           SLIDE 2: WHO I AM (INNOVATIVE HERO PROFILE)
+           =========================================== */
+        .s2-layout {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 80px;
+            align-items: center;
+            margin: auto 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .s2-hero-title {
+            font-family: var(--font-display);
+            font-size: 108px;
+            font-weight: 900;
+            line-height: 0.98;
+            letter-spacing: -0.04em;
+            color: var(--ink-primary);
+        }
+
+        .s2-name-highlight {
+            background: linear-gradient(135deg, var(--blue-primary) 0%, var(--azure-accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        .s2-wave {
+            display: inline-block;
+            transform-origin: 70% 70%;
+            animation: wave-hand 8s infinite ease-in-out;
+            -webkit-text-fill-color: initial;
+        }
+
+        @keyframes wave-hand {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            2% {
+                transform: rotate(14deg);
+            }
+
+            4% {
+                transform: rotate(-8deg);
+            }
+
+            6% {
+                transform: rotate(14deg);
+            }
+
+            8% {
+                transform: rotate(-4deg);
+            }
+
+            10% {
+                transform: rotate(10deg);
+            }
+
+            12%,
+            100% {
+                transform: rotate(0deg);
+            }
+        }
+
+        .s2-role-container {
+            margin-top: 36px;
+            padding: 24px 32px;
+            background: #FFFFFF;
+            border: 2px solid var(--border-line);
+            border-left: 6px solid var(--blue-primary);
+            border-radius: 24px;
+            box-shadow: 0 16px 40px rgba(10, 15, 29, 0.05);
+            max-width: 680px;
+        }
+
+        .s2-role-title {
+            font-family: var(--font-display);
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--ink-primary);
+            line-height: 1.25;
+        }
+
+        .s2-company-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+            font-family: var(--font-body);
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--blue-primary);
+        }
+
+        .s2-company-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--azure-accent);
+            box-shadow: 0 0 10px var(--azure-accent);
+            animation: pulse-glow 2s infinite alternate;
+        }
+
+        /* 3D Layered Portrait Presentation */
+        .s2-photo-stage {
+            position: relative;
+            width: 100%;
+            height: 640px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .s2-photo-glow {
+            position: absolute;
+            width: 90%;
+            height: 90%;
+            border-radius: 40px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.28) 0%, rgba(6, 182, 212, 0.14) 50%, transparent 75%);
+            filter: blur(40px);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .s2-photo-backdrop {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 36px;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(6, 182, 212, 0.08));
+            border: 2px solid rgba(37, 99, 235, 0.25);
+            transform: rotate(3.5deg);
+            z-index: 2;
+            transition: transform 0.4s ease;
+        }
+
+        .s2-photo-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 32px;
+            overflow: hidden;
+            background: #FFFFFF;
+            border: 2px solid var(--border-line);
+            box-shadow: 0 32px 80px -15px rgba(10, 15, 29, 0.3);
+            z-index: 3;
+        }
+
+        .s2-photo-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 10%;
+            display: block;
+        }
+
+        .s2-photo-chip {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(10, 15, 29, 0.85);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 20px;
+            border-radius: 999px;
+            color: #FFFFFF;
+            font-family: var(--font-mono);
+            font-size: 15px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 4;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        .s2-chip-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10B981;
+            box-shadow: 0 0 10px #10B981;
+        }
+
+        /* ===========================================
+           SLIDE 3: UNIVERSITY JOURNEY
+           =========================================== */
+        .s3-layout {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+            margin: auto 0;
+            position: relative;
+            z-index: 10;
+            gap: 40px;
+        }
+
+        .s3-title {
+            font-family: var(--font-display);
+            font-size: 88px;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            color: var(--ink-primary);
+            line-height: 1.02;
+        }
+
+        .s3-dual-photos {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 36px;
+            width: 100%;
+            height: 520px;
+        }
+
+        /* ===========================================
+           SLIDE 4: IBM CALL FOR CODE
+           =========================================== */
+        .s4-layout {
+            display: grid;
+            grid-template-columns: 1fr 1.05fr;
+            gap: 60px;
+            align-items: center;
+            margin: auto 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .s4-top-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .s4-cfc-logo {
+            height: 48px;
+            object-fit: contain;
+            border-radius: 10px;
+            background: #FFFFFF;
+            padding: 4px 14px;
+            border: 1.5px solid var(--border-line);
+            box-shadow: 0 4px 12px rgba(10, 15, 29, 0.05);
+            display: block;
+        }
+
+        .s4-award-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: #FEF3C7;
+            color: #92400E;
+            padding: 10px 24px;
+            border-radius: 999px;
+            font-family: var(--font-mono);
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            width: fit-content;
+        }
+
+        .s4-challenge-title {
+            font-family: var(--font-display);
+            font-size: 80px;
+            font-weight: 900;
+            line-height: 1.03;
+            letter-spacing: -0.03em;
+            color: var(--ink-primary);
+        }
+
+        .s4-prize-box {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-top: 24px;
+            padding: 14px 28px;
+            background: #FFFFFF;
+            border: 2px solid var(--border-line);
+            border-left: 5px solid var(--blue-primary);
+            border-radius: 16px;
+            box-shadow: 0 6px 18px rgba(10, 15, 29, 0.04);
+        }
+
+        .s4-prize-amount {
+            font-family: var(--font-display);
+            font-size: 52px;
+            font-weight: 900;
+            line-height: 1;
+            color: var(--blue-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .s4-prize-label {
+            font-family: var(--font-mono);
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--ink-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .s4-project-info {
+            margin-top: 26px;
+        }
+
+        .s4-project-name {
+            font-family: var(--font-display);
+            font-size: 42px;
+            font-weight: 800;
+            color: var(--ink-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .s4-project-desc {
+            font-size: 26px;
+            color: var(--ink-secondary);
+            margin-top: 10px;
+            font-weight: 500;
+            line-height: 1.48;
+            max-width: 580px;
+        }
+
+        /* Slide 4 Mockup Frame — cleanly fitted with elegant shadow */
+        .s4-mockup-frame {
+            width: 100%;
+            border-radius: 24px;
+            overflow: hidden;
+            background: #FFFFFF;
+            box-shadow: 0 32px 70px -15px rgba(10, 15, 29, 0.22),
+                0 12px 28px -5px rgba(10, 15, 29, 0.1),
+                0 0 0 1px rgba(10, 15, 29, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .s4-mockup-frame img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: contain;
+        }
+
+        /* ===========================================
+           SLIDE 5: INTERNSHIP AT UST
+           =========================================== */
+        .s5-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+            margin: auto 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .s5-title {
+            font-family: var(--font-display);
+            font-size: 80px;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            color: var(--ink-primary);
+            line-height: 1;
+        }
+
+        .s5-company {
+            font-family: var(--font-display);
+            font-size: 44px;
+            font-weight: 800;
+            color: var(--blue-primary);
+            margin-top: 16px;
+        }
+
+        /* ===========================================
+           SLIDE 6: GDG LEAD
+           =========================================== */
+        .s6-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+            margin: auto 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .s6-google-dots {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .g-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+        }
+
+        .s6-title {
+            font-family: var(--font-display);
+            font-size: 94px;
+            font-weight: 900;
+            line-height: 1.0;
+            letter-spacing: -0.03em;
+            color: var(--ink-primary);
+        }
+
+        /* ===========================================
+            SLIDE 7: AAAI & PRICAI PUBLICATIONS (BOOK STACK)
+            =========================================== */
+        .s7-layout {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 64px;
+            align-items: center;
+            margin: auto 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .s7-title {
+            font-family: var(--font-display);
+            font-size: 92px;
+            font-weight: 900;
+            line-height: 1.02;
+            letter-spacing: -0.03em;
+            color: var(--ink-primary);
+            margin-bottom: 18px;
+        }
+
+        .s7-sub {
+            font-size: 28px;
+            color: var(--ink-secondary);
+            font-weight: 500;
+            line-height: 1.45;
+            margin-bottom: 28px;
+            max-width: 560px;
+        }
+
+        .s7-pub-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .s7-card {
+            background: #FFFFFF;
+            border: 2px solid var(--border-line);
+            border-radius: 20px;
+            padding: 24px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 8px 24px rgba(10, 15, 29, 0.03);
+            border-left: 6px solid var(--blue-primary);
+        }
+
+        .s7-card-name {
+            font-family: var(--font-display);
+            font-size: 38px;
+            font-weight: 800;
+            color: var(--ink-primary);
+        }
+
+        .s7-card-desc {
+            font-size: 22px;
+            color: var(--ink-muted);
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        .s7-card-tag {
+            font-family: var(--font-mono);
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--blue-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-top: 6px;
+        }
+
+        /* 3D Stacked Book Mockup Effect for Slide 7 */
+        .s7-book-stack {
+            position: relative;
+            width: 100%;
+            height: 620px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .s7-book {
+            position: absolute;
+            border-radius: 4px 18px 18px 4px;
+            overflow: hidden;
+            background: #FFFFFF;
+            box-shadow:
+                -22px 32px 65px -10px rgba(10, 15, 29, 0.45),
+                -4px 8px 20px rgba(10, 15, 29, 0.2),
+                inset 10px 0 20px -8px rgba(0, 0, 0, 0.4),
+                inset 1px 0 2px rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+        }
+
+        .s7-book img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* PRICAI (Back Book) */
+        .s7-book-back {
+            width: 390px;
+            height: 550px;
+            transform: rotate(8deg) translate(80px, -20px);
+            z-index: 1;
+            box-shadow:
+                20px 32px 65px -10px rgba(10, 15, 29, 0.42),
+                4px 10px 24px rgba(0, 0, 0, 0.18),
+                inset 10px 0 20px -8px rgba(0, 0, 0, 0.4);
+        }
+
+        /* AAAI (Front Book) */
+        .s7-book-front {
+            width: 410px;
+            height: 580px;
+            transform: rotate(-5deg) translate(-50px, 20px);
+            z-index: 2;
+        }
+
+        /* Book spine crease shadow */
+        .s7-book::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 26px;
+            background: linear-gradient(to right, rgba(0, 0, 0, 0.3) 0%, rgba(255, 255, 255, 0.25) 50%, rgba(0, 0, 0, 0.18) 100%);
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        /* Book page edge stripes on right side */
+        .s7-book::after {
+            content: '';
+            position: absolute;
+            top: 6px;
+            bottom: 6px;
+            right: 0;
+            width: 6px;
+            background: repeating-linear-gradient(to bottom, #FAFAFA 0px, #CBD5E1 2px, #FAFAFA 4px);
+            box-shadow: inset 1px 0 2px rgba(0, 0, 0, 0.2);
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        /* ===========================================
+           SLIDE 8: BAYUT & DUBIZZLE (NOW FULL TIME)
+           =========================================== */
+        .s8-layout {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            margin: auto 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .s8-pill {
+            background: var(--blue-subtle);
+            color: var(--blue-primary);
+            padding: 10px 24px;
+            border-radius: 999px;
+            font-family: var(--font-mono);
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .s8-headline {
+            font-family: var(--font-display);
+            font-size: 104px;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            color: var(--ink-primary);
+            margin: 28px 0;
+            line-height: 1;
+        }
+
+        .s8-transition-graphic {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            margin-top: 24px;
+        }
+
+        .s8-step-box {
+            background: #FFFFFF;
+            border: 2px solid var(--border-line);
+            border-radius: 24px;
+            padding: 28px 48px;
+            box-shadow: 0 12px 32px rgba(10, 15, 29, 0.05);
+        }
+
+        .s8-step-label {
+            font-family: var(--font-mono);
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--ink-muted);
+            text-transform: uppercase;
+        }
+
+        .s8-step-val {
+            font-family: var(--font-display);
+            font-size: 38px;
+            font-weight: 800;
+            color: var(--ink-primary);
+            margin-top: 4px;
+        }
+
+        .s8-arrow-step {
+            font-size: 44px;
+            color: var(--blue-primary);
+            font-weight: 900;
+        }
+
+        /* ===========================================
+           SLIDES 9-13: NEXT-LEVEL "DON'T BE AFRAID"
+           =========================================== */
+        .statement-canvas {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 72px;
+            align-items: center;
+            margin: auto 0;
+            position: relative;
+            z-index: 10;
+            width: 100%;
+        }
+
+        .statement-h1 {
+            font-family: var(--font-display);
+            font-size: 98px;
+            font-weight: 900;
+            line-height: 0.98;
+            letter-spacing: -0.05em;
+            color: var(--ink-primary);
+            text-transform: uppercase;
+        }
+
+        .statement-h1 span.key-word {
+            color: var(--blue-primary);
+            display: inline-block;
+            background: linear-gradient(135deg, var(--blue-primary) 0%, var(--azure-accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .statement-h1 span.key-word-dark {
+            color: var(--ink-primary);
+            display: inline-block;
+        }
+
+        .statement-insight-card {
+            background: #FFFFFF;
+            border: 2px solid var(--border-line);
+            border-left: 6px solid var(--blue-primary);
+            border-radius: 24px;
+            padding: 26px 34px;
+            margin-top: 32px;
+            box-shadow: 0 16px 40px rgba(10, 15, 29, 0.05);
+            max-width: 760px;
+        }
+
+        .statement-insight-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--blue-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 10px;
+        }
+
+        .statement-sub {
+            font-family: var(--font-body);
+            font-size: 26px;
+            color: var(--ink-secondary);
+            font-weight: 500;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* --- S9: RADIANT OPPORTUNITY GALAXY (SAY YES) --- */
+        .s9-ray-graphic {
+            width: 580px;
+            height: 580px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+
+        .s9-pulse-center {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--blue-primary), var(--azure-accent));
+            box-shadow: 0 0 70px rgba(37, 99, 235, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            font-size: 58px;
+            font-weight: 900;
+            z-index: 4;
+            animation: pulse-glow 3s ease-in-out infinite alternate;
+        }
+
+        .s9-orbit-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px dashed rgba(37, 99, 235, 0.28);
+            animation: spin 60s linear infinite;
+        }
+
+        .s9-ring-1 {
+            width: 300px;
+            height: 300px;
+        }
+
+        .s9-ring-2 {
+            width: 440px;
+            height: 440px;
+            border-style: dotted;
+            border-color: rgba(6, 182, 212, 0.35);
+            animation-direction: reverse;
+            animation-duration: 45s;
+        }
+
+        .s9-ring-3 {
+            width: 560px;
+            height: 560px;
+            opacity: 0.5;
+        }
+
+        .s9-floating-node {
+            position: absolute;
+            background: #FFFFFF;
+            border: 1.5px solid var(--border-line);
+            box-shadow: 0 8px 24px rgba(10, 15, 29, 0.08);
+            padding: 8px 18px;
+            border-radius: 999px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--blue-primary);
+            z-index: 5;
+            white-space: nowrap;
+        }
+
+        .s9-node-1 {
+            top: 40px;
+            left: 50px;
+        }
+
+        .s9-node-2 {
+            bottom: 50px;
+            left: 40px;
+        }
+
+        .s9-node-3 {
+            top: 100px;
+            right: 10px;
+        }
+
+        .s9-node-4 {
+            bottom: 90px;
+            right: 30px;
+        }
+
+        /* --- S10: RADICAL FOCUS TARGET (SAY NO) --- */
+        .s10-target-graphic {
+            width: 580px;
+            height: 580px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+
+        .s10-outer-ring {
+            position: absolute;
+            width: 520px;
+            height: 520px;
+            border-radius: 50%;
+            border: 3px solid #E2E8F0;
+        }
+
+        .s10-mid-ring {
+            position: absolute;
+            width: 360px;
+            height: 360px;
+            border-radius: 50%;
+            border: 2px dashed rgba(37, 99, 235, 0.25);
+            animation: spin 50s linear infinite;
+        }
+
+        .s10-crosshair-h {
+            position: absolute;
+            width: 560px;
+            height: 2px;
+            background: linear-gradient(to right, transparent, rgba(37, 99, 235, 0.4), transparent);
+        }
+
+        .s10-crosshair-v {
+            position: absolute;
+            height: 560px;
+            width: 2px;
+            background: linear-gradient(to bottom, transparent, rgba(37, 99, 235, 0.4), transparent);
+        }
+
+        .s10-center-shield {
+            width: 190px;
+            height: 190px;
+            border-radius: 50%;
+            background: var(--ink-primary);
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-display);
+            font-size: 72px;
+            font-weight: 900;
+            box-shadow: 0 24px 60px rgba(10, 15, 29, 0.3);
+            border: 4px solid var(--blue-primary);
+            z-index: 3;
+        }
+
+        .s10-badge {
+            position: absolute;
+            background: #FFFFFF;
+            border: 1.5px solid var(--border-line);
+            box-shadow: 0 8px 24px rgba(10, 15, 29, 0.08);
+            padding: 8px 18px;
+            border-radius: 999px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            font-weight: 700;
+            z-index: 5;
+            white-space: nowrap;
+        }
+
+        .s10-b1 {
+            top: 50px;
+            right: 30px;
+            color: var(--blue-primary);
+            border-color: rgba(37, 99, 235, 0.25);
+        }
+
+        .s10-b2 {
+            bottom: 70px;
+            left: 30px;
+            color: var(--blue-primary);
+            border-color: rgba(37, 99, 235, 0.25);
+        }
+
+        .s10-b3 {
+            top: 70px;
+            left: 30px;
+            color: var(--blue-primary);
+            border-color: rgba(37, 99, 235, 0.25);
+        }
+
+        /* --- S11: COMPOUND MOMENTUM STAIRS (START SMALL) --- */
+        .s11-compound-graphic {
+            width: 580px;
+            height: 500px;
+            display: flex;
+            align-items: flex-end;
+            gap: 20px;
+            padding-bottom: 20px;
+            position: relative;
+            margin: 0 auto;
+        }
+
+        .s11-bar {
+            flex: 1;
+            border-radius: 20px 20px 12px 12px;
+            background: #FFFFFF;
+            border: 2px solid var(--border-line);
+            box-shadow: 0 12px 30px rgba(10, 15, 29, 0.04);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 8px;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: var(--ink-muted);
+            transition: transform 0.3s;
+        }
+
+        .s11-bar-tag {
+            font-size: 11px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+        }
+
+        .s11-bar-num {
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .s11-bar.active {
+            background: linear-gradient(180deg, var(--blue-primary), #1D4ED8);
+            border-color: var(--blue-primary);
+            color: #FFFFFF;
+            box-shadow: 0 24px 50px rgba(37, 99, 235, 0.35);
+        }
+
+        .s11-b1 {
+            height: 110px;
+        }
+
+        .s11-b2 {
+            height: 180px;
+        }
+
+        .s11-b3 {
+            height: 270px;
+        }
+
+        .s11-b4 {
+            height: 380px;
+        }
+
+        .s11-b5 {
+            height: 490px;
+        }
+
+        .s11-curve-pill {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: #EFF6FF;
+            border: 1.5px solid rgba(37, 99, 235, 0.25);
+            padding: 8px 18px;
+            border-radius: 999px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--blue-primary);
+        }
+
+        /* --- S12: VELOCITY ESCAPE TRAJECTORY (SCALE BIG) --- */
+        .s12-scale-graphic {
+            width: 580px;
+            height: 580px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+
+        .s12-backdrop-plane {
+            position: absolute;
+            width: 440px;
+            height: 440px;
+            border-radius: 44px;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(6, 182, 212, 0.08));
+            border: 2px solid rgba(37, 99, 235, 0.25);
+            transform: rotate(45deg);
+        }
+
+        .s12-orbit-dash {
+            position: absolute;
+            width: 540px;
+            height: 540px;
+            border-radius: 50%;
+            border: 2px dashed rgba(37, 99, 235, 0.2);
+            animation: spin 40s linear infinite;
+        }
+
+        .s12-rocket-card {
+            width: 290px;
+            height: 290px;
+            border-radius: 36px;
+            background: #FFFFFF;
+            border: 2px solid var(--border-line);
+            box-shadow: 0 30px 70px rgba(37, 99, 235, 0.22);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+            gap: 12px;
+        }
+
+        .s12-rocket-icon {
+            font-size: 96px;
+            line-height: 1;
+            color: var(--blue-primary);
+        }
+
+        .s12-pill-metric {
+            position: absolute;
+            background: #FFFFFF;
+            border: 1.5px solid var(--border-line);
+            box-shadow: 0 8px 24px rgba(10, 15, 29, 0.08);
+            padding: 8px 18px;
+            border-radius: 999px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--ink-primary);
+            z-index: 5;
+        }
+
+        .s12-p1 {
+            top: 40px;
+            right: 20px;
+        }
+
+        .s12-p2 {
+            bottom: 50px;
+            left: 20px;
+        }
+
+        /* --- S13: BROADCAST SIGNAL BEACON (PUT YOURSELF OUT THERE) --- */
+        .s13-broadcast-graphic {
+            width: 580px;
+            height: 580px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+
+        .s13-wave {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid var(--blue-primary);
+            opacity: 0.15;
+            animation: ripple-grow 4s infinite linear;
+        }
+
+        .s13-w1 {
+            width: 200px;
+            height: 200px;
+            animation-delay: 0s;
+        }
+
+        .s13-w2 {
+            width: 330px;
+            height: 330px;
+            animation-delay: 1s;
+        }
+
+        .s13-w3 {
+            width: 460px;
+            height: 460px;
+            animation-delay: 2s;
+        }
+
+        .s13-w4 {
+            width: 580px;
+            height: 580px;
+            animation-delay: 3s;
+        }
+
+        .s13-beacon {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--blue-primary), var(--azure-accent));
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+            box-shadow: 0 0 60px rgba(37, 99, 235, 0.5);
+            z-index: 3;
+        }
+
+        .s13-chip {
+            position: absolute;
+            background: #FFFFFF;
+            border: 1.5px solid var(--border-line);
+            box-shadow: 0 8px 24px rgba(10, 15, 29, 0.08);
+            padding: 8px 18px;
+            border-radius: 999px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--blue-primary);
+            z-index: 5;
+            white-space: nowrap;
+        }
+
+        .s13-c1 {
+            top: 40px;
+            left: 40px;
+        }
+
+        .s13-c2 {
+            bottom: 50px;
+            right: 40px;
+        }
+
+        .s13-c3 {
+            top: 70px;
+            right: 30px;
+        }
+
+        .s13-c4 {
+            bottom: 60px;
+            left: 40px;
+            color: #0077B5;
+            border-color: rgba(0, 119, 181, 0.25);
+        }
+
+        @keyframes pulse-glow {
+            0% {
+                transform: scale(0.96);
+                box-shadow: 0 0 40px rgba(37, 99, 235, 0.4);
+            }
+
+            100% {
+                transform: scale(1.04);
+                box-shadow: 0 0 80px rgba(6, 182, 212, 0.6);
+            }
+        }
+
+        /* ===========================================
+           SLIDE 14: LET'S CONNECT! & QR CODE
+           =========================================== */
+        .s14-split-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+            margin: auto 0;
+            position: relative;
+            z-index: 10;
+            width: 100%;
+        }
+
+        .s14-left {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: left;
+        }
+
+        .s14-h1 {
+            font-family: var(--font-display);
+            font-size: 144px;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            color: var(--ink-primary);
+            line-height: 0.96;
+        }
+
+        /* Right: High-impact large QR code card */
+        .s14-qr-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .s14-qr-card {
+            background: #FFFFFF;
+            border: 2px solid var(--border-line);
+            border-radius: 40px;
+            padding: 40px 48px;
+            box-shadow: 0 32px 85px rgba(10, 15, 29, 0.12), 0 0 0 1px rgba(37, 99, 235, 0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 22px;
+            position: relative;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .s14-qr-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 44px 95px rgba(37, 99, 235, 0.2), 0 0 0 2px var(--blue-primary);
+        }
+
+        .s14-qr-pill {
+            font-family: var(--font-mono);
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--blue-primary);
+            background: var(--blue-subtle);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            padding: 10px 28px;
+            border-radius: 999px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .s14-qr-img-wrapper {
+            background: #FFFFFF;
+            padding: 20px;
+            border-radius: 30px;
+            border: 1.5px solid var(--border-line);
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.02);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .s14-qr-img {
+            width: 420px;
+            height: 420px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .s14-qr-footer {
+            font-family: var(--font-mono);
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--blue-primary);
+            letter-spacing: 0.02em;
+        }
+
+        .s14-qr-footer a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .s14-qr-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="deck-viewport">
+        <main class="deck-stage" id="deckStage">
+
+            <!-- ==========================================
+                 SLIDE 01: FROM DEGREE TO DESK (TITLE)
+                 ========================================== -->
+            <section class="slide active visible" id="slide-1">
+                <div class="slide-canvas">
+                    <!-- Geometric Prism Backdrop -->
+                    <div class="title-sculpture">
+                        <div class="title-prism-back"></div>
+                        <div class="title-card-front">
+                            <span
+                                style="font-size:15px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#2563EB;background:#EFF6FF;padding:8px 16px;border-radius:999px;align-self:flex-start;">STUDENT
+                                TALK</span>
+                            <div style="font-size:72px;color:#2563EB;line-height:1;">&#10038;</div>
+                            <div style="font-size:18px;font-weight:600;color:#334155;line-height:1.4;">From lecture
+                                halls to production machine learning models.</div>
+                        </div>
+                    </div>
+
+                    <div></div>
+
+                    <div class="title-hero-lockup reveal">
+                        <div class="title-hero-kicker">University to Industry</div>
+                        <h1 class="title-hero-h1">
+                            From Degree<br>
+                            <span class="blue-highlight">To Desk &rarr;</span>
+                        </h1>
+                        <p class="title-hero-sub">
+                            Navigating university, early research, and real-world projects to build a career in
+                            Artificial Intelligence.
+                        </p>
+                    </div>
+
+                    <footer class="title-footer reveal">
+                        <div class="title-speaker-meta">
+                            <div class="speaker-avatar-circle">JT</div>
+                            <div>
+                                <div class="speaker-title-text">Jonathan Thomas</div>
+                                <div class="speaker-subtitle-text">Graduate Machine Learning Engineer &bull; Bayut and
+                                    Dubizzle</div>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 SLIDE 02: WHO I AM (HERO PROFILE)
+                 ========================================== -->
+            <section class="slide" id="slide-2">
+                <div class="slide-canvas">
+                    <header class="slide-header reveal">
+                        <div class="header-category-chip">
+                            <span class="header-dot"></span>
+                            Introduction
+                        </div>
+                    </header>
+
+                    <div class="s2-layout">
+                        <div class="reveal">
+                            <h2 class="s2-hero-title">
+                                Hey, I'm<br><span class="s2-name-highlight">Jonathan</span> <span
+                                    class="s2-wave">&#128075;</span>
+                            </h2>
+
+                            <div class="s2-role-container">
+                                <div class="s2-role-title">Graduate Machine Learning Engineer</div>
+                                <div class="s2-company-pill">
+                                    <span class="s2-company-dot"></span>
+                                    <span>at Bayut and Dubizzle</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3D Staged Portrait Photo -->
+                        <div class="s2-photo-stage reveal">
+                            <div class="s2-photo-glow"></div>
+                            <div class="s2-photo-backdrop"></div>
+                            <div class="s2-photo-wrapper">
+                                <img src="assets/images/slide-2.png" alt="Jonathan Thomas at Dubizzle Group event">
+                                <div class="s2-photo-chip">
+                                    <span class="s2-chip-dot"></span>
+                                    <span>Dubai, UAE</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div></div>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 SLIDE 03: MY JOURNEY THROUGH UNIVERSITY
+                 ========================================== -->
+            <!-- Slide 3: Full-bleed split — text left, graduation photo fills entire right half -->
+            <section class="slide" id="slide-3">
+                <div style="position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;overflow:hidden;">
+                    <!-- Left: text content on light background -->
+                    <div
+                        style="background:var(--slide-bg);display:flex;flex-direction:column;justify-content:center;padding:80px 80px 80px 100px;position:relative;z-index:10;">
+                        <!-- Decorative vertical bar -->
+                        <div
+                            style="position:absolute;left:100px;top:80px;bottom:80px;width:5px;background:linear-gradient(to bottom,var(--blue-primary),var(--azure-accent));border-radius:4px;opacity:0.3;">
+                        </div>
+                        <div class="reveal" style="padding-left:36px;">
+                            <div
+                                style="font-family:var(--font-mono);font-size:18px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--blue-primary);margin-bottom:24px;">
+                                Academic Foundations</div>
+                            <h2 class="s3-title">
+                                My Journey<br>Through<br><span style="color:var(--blue-primary);">University</span>
+                            </h2>
+                            <div style="margin-top:32px;">
+                                <div
+                                    style="font-family:var(--font-display);font-size:36px;font-weight:800;color:var(--ink-primary);line-height:1.2;">
+                                    Heriot-Watt University Dubai
+                                </div>
+                                <div style="font-size:28px;color:var(--blue-primary);font-weight:700;margin-top:8px;">
+                                    BSc (Hons) Computer Science (Artificial Intelligence)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Right: full-bleed graduation photo -->
+                    <div style="position:relative;overflow:hidden;">
+                        <img src="assets/images/slide-3.jpeg" alt="Graduation at Heriot-Watt University"
+                            style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%;">
+                        <!-- Subtle left-edge gradient to blend with text column -->
+                        <div
+                            style="position:absolute;inset:0;background:linear-gradient(to right,var(--slide-bg) 0%,transparent 14%);">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 SLIDE 04: IBM CALL FOR CODE GLOBAL CHALLENGE
+                 ========================================== -->
+            <section class="slide" id="slide-4">
+                <div class="slide-canvas">
+                    <header class="slide-header reveal">
+                        <div class="header-category-chip">
+                            <span class="header-dot"></span>
+                            Global Competition
+                        </div>
+                    </header>
+
+                    <div class="s4-layout">
+                        <div class="reveal">
+                            <!-- Award Badge without CFC Logo -->
+                            <div class="s4-top-meta">
+                                <div class="s4-award-tag">&#127942; First Place University Prize</div>
+                            </div>
+
+                            <h2 class="s4-challenge-title">
+                                IBM Call for Code<br>
+                                Global Challenge<br>
+                                <span class="round-tag">Round 3</span>
+                            </h2>
+
+                            <!-- $10,000 Prize made smaller than Challenge Name -->
+                            <div class="s4-prize-box">
+                                <span class="s4-prize-amount">$10,000</span>
+                                <span class="s4-prize-label">Global Prize Winner</span>
+                            </div>
+
+                            <!-- PestDetect Project Details -->
+                            <div class="s4-project-info">
+                                <div class="s4-project-name">
+                                    <span>&#128269;</span>
+                                    <span>PestDetect</span>
+                                </div>
+                                <p class="s4-project-desc">
+                                    Mobile AI for rapid identification of stored-grain pests, delivering sustainable
+                                    ecological management techniques directly to farmers.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- PestDetect project mockup - cleanly fitted without excess box padding, larger and with deep shadow -->
+                        <div class="s4-mockup-frame reveal">
+                            <img src="assets/images/slide-4.png" alt="PestDetect - IBM Call for Code winning project"
+                                class="s4-mockup-img">
+                        </div>
+                    </div>
+                    <div></div>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 SLIDE 05: INTERNSHIP AT UST
+                 ========================================== -->
+            <!-- Slide 5: Dark accent panel left, photo right - distinctive from slide 4's white layout -->
+            <section class="slide" id="slide-5">
+                <div style="position:absolute;inset:0;display:grid;grid-template-columns:1fr 1.1fr;overflow:hidden;">
+                    <!-- Left: dark blue panel with text -->
+                    <div
+                        style="background:var(--ink-primary);display:flex;flex-direction:column;justify-content:center;padding:80px 80px;position:relative;overflow:hidden;">
+                        <!-- Background decorative rings -->
+                        <div
+                            style="position:absolute;width:500px;height:500px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.06);top:-80px;left:-120px;">
+                        </div>
+                        <div
+                            style="position:absolute;width:700px;height:700px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.04);top:-180px;left:-220px;">
+                        </div>
+                        <div
+                            style="position:absolute;top:80px;right:0;width:3px;height:calc(100% - 160px);background:linear-gradient(to bottom,transparent,var(--azure-accent),transparent);opacity:0.4;">
+                        </div>
+
+                        <div class="reveal">
+                            <div
+                                style="font-family:var(--font-mono);font-size:22px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--azure-accent);margin-bottom:24px;">
+                                Industry Experience</div>
+                            <h2
+                                style="font-family:var(--font-display);font-size:94px;font-weight:900;line-height:1.02;letter-spacing:-0.04em;color:#FFFFFF;">
+                                AI &amp; Data Science<br><span style="color:var(--azure-accent);">Internship</span>
+                            </h2>
+                            <div
+                                style="font-family:var(--font-display);font-size:52px;font-weight:800;color:#FFFFFF;margin-top:18px;">
+                                at UST</div>
+                            <p
+                                style="margin-top:30px;font-size:30px;color:rgba(255,255,255,0.85);font-weight:500;line-height:1.5;max-width:580px;">
+                                First real exposure to enterprise tech - building an on-device scam detection model for
+                                messages.
+                            </p>
+                        </div>
+                    </div>
+                    <!-- Right: UST internship photo collage -->
+                    <div style="position:relative;overflow:hidden;">
+                        <img src="assets/images/slide-5.jpeg" alt="Jonathan at UST internship"
+                            style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%;">
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 SLIDE 06: AI AND ML LEAD AT GDGoC
+                 ========================================== -->
+            <!-- Slide 6: 3-panel mosaic grid - text + two photos side by side (portrait speaker + landscape audience) -->
+            <section class="slide" id="slide-6">
+                <div
+                    style="position:absolute;inset:0;display:grid;grid-template-columns:1.05fr 1.35fr;overflow:hidden;">
+                    <!-- Left: content -->
+                    <div
+                        style="background:var(--slide-bg);display:flex;flex-direction:column;justify-content:center;padding:80px 72px 80px 100px;position:relative;z-index:10;">
+                        <div class="reveal">
+                            <div class="s6-google-dots">
+                                <span class="g-dot" style="background:#4285F4;"></span>
+                                <span class="g-dot" style="background:#EA4335;"></span>
+                                <span class="g-dot" style="background:#FBBC05;"></span>
+                                <span class="g-dot" style="background:#34A853;"></span>
+                            </div>
+                            <div
+                                style="font-family:var(--font-mono);font-size:22px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--blue-primary);margin-bottom:20px;">
+                                Community Leadership</div>
+                            <h2 class="s6-title">AI &amp; ML Lead</h2>
+                            <p
+                                style="font-size:38px;color:var(--blue-primary);margin-top:16px;font-weight:800;font-family:var(--font-display);line-height:1.2;">
+                                Google Developer Groups on Campus (GDGoC)
+                            </p>
+                            <p
+                                style="margin-top:24px;font-size:28px;color:var(--ink-secondary);font-weight:500;line-height:1.5;max-width:540px;">
+                                Demystifying artificial intelligence for students - conducting hands-on coding sessions,
+                                mentoring peers, and cultivating a vibrant engineering community.
+                            </p>
+                            <div style="display:flex;gap:14px;margin-top:32px;flex-wrap:wrap;">
+                                <div
+                                    style="background:var(--blue-subtle);border:1px solid rgba(37,99,235,0.2);padding:10px 22px;border-radius:999px;color:var(--blue-primary);font-family:var(--font-mono);font-size:18px;font-weight:700;">
+                                    🎤 Tech Workshops
+                                </div>
+                                <div
+                                    style="background:var(--blue-subtle);border:1px solid rgba(37,99,235,0.2);padding:10px 22px;border-radius:999px;color:var(--blue-primary);font-family:var(--font-mono);font-size:18px;font-weight:700;">
+                                    👥 Peer Mentorship
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Right: stacked photos (2-row grid) -->
+                    <div style="display:grid;grid-template-rows:1fr 1fr;gap:0;overflow:hidden;">
+                        <div style="position:relative;overflow:hidden;">
+                            <img src="assets/images/slide-6.jpeg" alt="Jonathan giving a GDG talk"
+                                style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%;">
+                        </div>
+                        <div style="position:relative;overflow:hidden;border-top:3px solid #FFFFFF;">
+                            <img src="assets/images/slide-6-2.jpeg" alt="GDG workshop audience"
+                                style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%;">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 SLIDE 07: PUBLISHED AT AAAI 2025 & PRICAI 2025
+                 ========================================== -->
+            <!-- Slide 7: Research publication presentation with realistic 3D book mockup stack -->
+            <section class="slide" id="slide-7">
+                <div class="slide-canvas">
+                    <header class="slide-header reveal">
+                        <div class="header-category-chip">
+                            <span class="header-dot"></span>
+                            Academic Research
+                        </div>
+                    </header>
+
+                    <div class="s7-layout">
+                        <div class="reveal">
+                            <h2 class="s7-title">Published Research</h2>
+                            <p class="s7-sub">
+                                Contributing original peer-reviewed work in the field of evidence-based fake news
+                                detection
+                            </p>
+                            <div class="s7-pub-cards">
+                                <div class="s7-card">
+                                    <div>
+                                        <div class="s7-card-name">AAAI 2025</div>
+                                        <div class="s7-card-desc">Summer Symposium Series &bull; Heriot-Watt University
+                                            Dubai</div>
+                                        <div class="s7-card-tag">Association for the Advancement of Artificial
+                                            Intelligence</div>
+                                    </div>
+                                    <div style="font-size:38px;color:var(--blue-primary);">&#10022;</div>
+                                </div>
+                                <div class="s7-card">
+                                    <div>
+                                        <div class="s7-card-name">PRICAI 2025</div>
+                                        <div class="s7-card-desc">Pacific Rim International Conference on Artificial
+                                            Intelligence</div>
+                                        <div class="s7-card-tag">Published in Springer Lecture Notes in AI (LNAI)</div>
+                                    </div>
+                                    <div style="font-size:38px;color:var(--blue-primary);">&#10022;</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Realistic 3D Stacked Books Mockup Effect -->
+                        <div class="s7-book-stack reveal">
+                            <!-- Back Book: PRICAI 2025 -->
+                            <div class="s7-book s7-book-back">
+                                <img src="assets/images/slide-7-2.webp" alt="PRICAI 2025 Proceedings Volume">
+                            </div>
+                            <!-- Front Book: AAAI 2025 (stacked on top, overlapping with depth shadow) -->
+                            <div class="s7-book s7-book-front">
+                                <img src="assets/images/slide-7-1.jpg" alt="AAAI 2025 Summer Symposium Proceedings">
+                            </div>
+                        </div>
+                    </div>
+                    <div></div>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 SLIDE 08: ML INTERN AT BAYUT & DUBIZZLE -> NOW FULL TIME
+                 ========================================== -->
+            <!-- Slide 8: Full-bleed hero photo with a dark overlay panel of text on top -->
+            <section class="slide" id="slide-8">
+                <div style="position:absolute;inset:0;overflow:hidden;">
+                    <!-- Full bleed background photo -->
+                    <img src="assets/images/slide-8.jpg" alt="Jonathan at Dubizzle Dubai Commercity"
+                        style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 30%;">
+                    <!-- Dark gradient overlay left-to-right -->
+                    <div
+                        style="position:absolute;inset:0;background:linear-gradient(100deg,rgba(10,15,29,0.94) 0%,rgba(10,15,29,0.76) 55%,rgba(10,15,29,0.2) 100%);">
+                    </div>
+
+                    <!-- Text content pinned to left -->
+                    <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:80px 100px;"
+                        class="reveal">
+                        <div
+                            style="display:inline-flex;align-items:center;gap:10px;background:rgba(6,182,212,0.15);border:1px solid rgba(6,182,212,0.4);padding:8px 22px;border-radius:999px;margin-bottom:24px;width:fit-content;">
+                            <span
+                                style="font-family:var(--font-mono);font-size:16px;font-weight:700;color:var(--azure-accent);letter-spacing:0.1em;text-transform:uppercase;">Transition
+                                to Full-Time Industry</span>
+                        </div>
+                        <h2
+                            style="font-family:var(--font-display);font-size:104px;font-weight:900;letter-spacing:-0.04em;color:#FFFFFF;line-height:0.98;max-width:850px;">
+                            Bayut and Dubizzle
+                        </h2>
+                        <p
+                            style="font-size:30px;color:rgba(255,255,255,0.85);font-weight:600;margin-top:18px;max-width:720px;line-height:1.35;">
+                            Transforming university foundations and internship impact into a full-time Machine Learning
+                            Engineer career.
+                        </p>
+
+                        <div style="display:flex;align-items:center;gap:28px;margin-top:40px;">
+                            <div
+                                style="background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.25);border-radius:22px;padding:26px 42px;backdrop-filter:blur(14px);">
+                                <div
+                                    style="font-family:var(--font-mono);font-size:15px;font-weight:700;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.08em;">
+                                    2025 &bull; First Step</div>
+                                <div
+                                    style="font-family:var(--font-display);font-size:38px;font-weight:800;color:#FFFFFF;margin-top:4px;">
+                                    ML Intern</div>
+                                <div style="font-size:18px;color:rgba(255,255,255,0.7);margin-top:4px;font-weight:500;">
+                                    Learning the codebase &amp; shipping initial features</div>
+                            </div>
+                            <div style="font-size:44px;color:var(--azure-accent);font-weight:900;">&rarr;</div>
+                            <div
+                                style="background:rgba(6,182,212,0.2);border:2px solid var(--azure-accent);border-radius:22px;padding:26px 42px;backdrop-filter:blur(14px);box-shadow:0 12px 36px rgba(6,182,212,0.25);">
+                                <div
+                                    style="font-family:var(--font-mono);font-size:15px;font-weight:700;color:var(--azure-accent);text-transform:uppercase;letter-spacing:0.08em;">
+                                    Today &bull; Full-Time</div>
+                                <div
+                                    style="font-family:var(--font-display);font-size:38px;font-weight:800;color:#FFFFFF;margin-top:4px;">
+                                    ML Engineer &#127881;</div>
+                                <div style="font-size:18px;color:rgba(255,255,255,0.9);margin-top:4px;font-weight:500;">
+                                    Deploying production ML apps &amp; working on agentic AI systems across Bayut and
+                                    Dubizzle</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 SLIDE 09: DON'T BE AFRAID TO SAY YES
+                 ========================================== -->
+            <section class="slide" id="slide-9">
+                <div class="slide-canvas">
+                    <header class="slide-header reveal">
+                        <div class="header-category-chip">
+                            <span class="header-dot"></span>
+                            Lesson 01
+                        </div>
+                    </header>
+
+                    <div class="statement-canvas">
+                        <div class="reveal">
+                            <h2 class="statement-h1">
+                                Don't be afraid<br>
+                                to say <span class="key-word">yes</span>
+                            </h2>
+                            <div class="statement-insight-card">
+                                <div class="statement-insight-badge">&#10024; The Bias Toward Opportunity</div>
+                                <p class="statement-sub">
+                                    Say yes to ambitious hackathons, unfamiliar projects, and challenges before you feel
+                                    100% ready. Growth begins right at the edge of your comfort zone.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Next-Level Radiant Branching Node Graphic -->
+                        <div class="s9-ray-graphic reveal">
+                            <div class="s9-orbit-ring s9-ring-1"></div>
+                            <div class="s9-orbit-ring s9-ring-2"></div>
+                            <div class="s9-orbit-ring s9-ring-3"></div>
+                            <div class="s9-floating-node s9-node-1">&#129309; Hackathons</div>
+                            <div class="s9-floating-node s9-node-2">&#128640; Bold Projects</div>
+                            <div class="s9-floating-node s9-node-3">&#128218; New Research</div>
+                            <div class="s9-floating-node s9-node-4">&#128172; Public Talks</div>
+                            <div class="s9-pulse-center">&rarr;</div>
+                        </div>
+                    </div>
+                    <div></div>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 SLIDE 10: DON'T BE AFRAID TO SAY NO
+                 ========================================== -->
+            <section class="slide" id="slide-10">
+                <div class="slide-canvas">
+                    <header class="slide-header reveal">
+                        <div class="header-category-chip">
+                            <span class="header-dot"></span>
+                            Lesson 02
+                        </div>
+                    </header>
+
+                    <div class="statement-canvas">
+                        <div class="reveal">
+                            <h2 class="statement-h1">
+                                Don't be afraid<br>
+                                to say <span class="key-word">no</span>
+                            </h2>
+                            <div class="statement-insight-card">
+                                <div class="statement-insight-badge">
+                                    &#127919; Clear Priorities</div>
+                                <p class="statement-sub">
+                                    Prioritize what you want and focus on what truly matters. Knowing your limits,
+                                    drawing the line, and learning when to say no protects your energy for the work that counts.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Next-Level Focus Target Crosshair Graphic -->
+                        <div class="s10-target-graphic reveal">
+                            <div class="s10-outer-ring"></div>
+                            <div class="s10-mid-ring"></div>
+                            <div class="s10-crosshair-h"></div>
+                            <div class="s10-crosshair-v"></div>
+                            <div class="s10-badge s10-b3">&#127919; What Really Matters</div>
+                            <div class="s10-badge s10-b1">&#128737;&#65039; Drawing The Line</div>
+                            <div class="s10-badge s10-b2">&#9878;&#65039; Knowing Your Limits</div>
+                            <div class="s10-center-shield">&#10005;</div>
+                        </div>
+                    </div>
+                    <div></div>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 SLIDE 11: DON'T BE AFRAID TO START SMALL
+                 ========================================== -->
+            <section class="slide" id="slide-11">
+                <div class="slide-canvas">
+                    <header class="slide-header reveal">
+                        <div class="header-category-chip">
+                            <span class="header-dot"></span>
+                            Lesson 03
+                        </div>
+                    </header>
+
+                    <div class="statement-canvas">
+                        <div class="reveal">
+                            <h2 class="statement-h1">
+                                Don't be afraid<br>
+                                to start <span class="key-word">small</span>
+                            </h2>
+                            <div class="statement-insight-card">
+                                <div class="statement-insight-badge">&#128200; The Power of Compounding</div>
+                                <p class="statement-sub">
+                                    Every enterprise model begins with a humble script. Ship the simplest working
+                                    version first - small, daily iterations compound into huge breakthroughs.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Next-Level Compound Growth Step Graphic -->
+                        <div class="s11-compound-graphic reveal">
+                            <div class="s11-curve-pill">&#9889; Daily Compounding Iterations</div>
+                            <div class="s11-bar s11-b1">
+                                <span class="s11-bar-tag">Script</span>
+                                <span class="s11-bar-num">01</span>
+                            </div>
+                            <div class="s11-bar s11-b2">
+                                <span></span>
+                                <span class="s11-bar-num">02</span>
+                            </div>
+                            <div class="s11-bar s11-b3">
+                                <span class="s11-bar-tag">Prototype</span>
+                                <span class="s11-bar-num">03</span>
+                            </div>
+                            <div class="s11-bar s11-b4">
+                                <span></span>
+                                <span class="s11-bar-num">04</span>
+                            </div>
+                            <div class="s11-bar s11-b5 active">
+                                <span class="s11-bar-tag" style="color:rgba(255,255,255,0.9);">Production</span>
+                                <span class="s11-bar-num">05</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div></div>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 SLIDE 12: DON'T BE AFRAID TO SCALE BIG
+                 ========================================== -->
+            <section class="slide" id="slide-12">
+                <div class="slide-canvas">
+                    <header class="slide-header reveal">
+                        <div class="header-category-chip">
+                            <span class="header-dot"></span>
+                            Lesson 04
+                        </div>
+                    </header>
+
+                    <div class="statement-canvas">
+                        <div class="reveal">
+                            <h2 class="statement-h1">
+                                Don't be afraid<br>
+                                to scale <span class="key-word">big</span>
+                            </h2>
+                            <div class="statement-insight-card">
+                                <div class="statement-insight-badge">&#127757; Global Ambition</div>
+                                <p class="statement-sub">
+                                    When you create something that works, don't leave it on localhost. Compete on global
+                                    stages, submit to international conferences, and aim for real-world impact.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Next-Level Scale Vector Plane Graphic -->
+                        <div class="s12-scale-graphic reveal">
+                            <div class="s12-backdrop-plane"></div>
+                            <div class="s12-orbit-dash"></div>
+                            <div class="s12-pill-metric s12-p1">&#127758; Global Stages</div>
+                            <div class="s12-pill-metric s12-p2">&#128640; Real-World Impact</div>
+                            <div class="s12-rocket-card">
+                                <div class="s12-rocket-icon">&#8599;</div>
+                                <div
+                                    style="font-family:var(--font-mono);font-size:16px;font-weight:700;color:var(--blue-primary);letter-spacing:0.06em;text-transform:uppercase;">
+                                    Escape Localhost</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div></div>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 SLIDE 13: DON'T BE AFRAID TO PUT YOURSELF OUT THERE
+                 ========================================== -->
+            <section class="slide" id="slide-13">
+                <div class="slide-canvas">
+                    <header class="slide-header reveal">
+                        <div class="header-category-chip">
+                            <span class="header-dot"></span>
+                            Lesson 05
+                        </div>
+                    </header>
+
+                    <div class="statement-canvas">
+                        <div class="reveal">
+                            <h2 class="statement-h1" style="font-size:92px;">
+                                Don't be afraid<br>
+                                to put yourself<br>
+                                <span class="key-word">out there</span>
+                            </h2>
+                            <div class="statement-insight-card">
+                                <div class="statement-insight-badge">&#128225; Public Proof of Work</div>
+                                <p class="statement-sub">
+                                    Network before you need a job. Share your projects publicly, teach what you learn,
+                                    and engage with the community - your visibility is your strongest asset.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Next-Level Signal Ripple Beacon Graphic -->
+                        <div class="s13-broadcast-graphic reveal">
+                            <div class="s13-wave s13-w1"></div>
+                            <div class="s13-wave s13-w2"></div>
+                            <div class="s13-wave s13-w3"></div>
+                            <div class="s13-wave s13-w4"></div>
+                            <div class="s13-chip s13-c1">&#128101; Build In Public</div>
+                            <div class="s13-chip s13-c3">&#128205; Genuine Reach</div>
+                            <div class="s13-chip s13-c4">&#128188; LinkedIn</div>
+                            <div class="s13-chip s13-c2">&#127914; Community Talks</div>
+                            <div class="s13-beacon">&#128225;</div>
+                        </div>
+                    </div>
+                    <div></div>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 SLIDE 14: LET'S CONNECT! & LINKEDIN
+                 ========================================== -->
+            <section class="slide" id="slide-14">
+                <div class="slide-canvas">
+                    <header class="slide-header reveal">
+                        <div class="header-category-chip">
+                            <span class="header-dot"></span>
+                            Connect &bull; Q&amp;A
+                        </div>
+                    </header>
+
+                    <div class="s14-split-layout">
+                        <!-- Left: Bold Headline -->
+                        <div class="s14-left reveal">
+                            <h2 class="s14-h1">Let's<br>Connect!</h2>
+                        </div>
+
+                        <!-- Right: Large QR Code Card -->
+                        <div class="s14-qr-container reveal">
+                            <div class="s14-qr-card">
+                                <span class="s14-qr-pill">&#128241; Scan to Connect</span>
+                                <div class="s14-qr-img-wrapper">
+                                    <img src="assets/images/slide-14.png" alt="LinkedIn QR Code" class="s14-qr-img">
+                                </div>
+                                <div class="s14-qr-footer">
+                                    <a href="https://www.linkedin.com/in/jonathanjohnthomas"
+                                        target="_blank">linkedin.com/in/jonathanjohnthomas</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div></div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Presentation Chrome Controls -->
+    <div class="deck-controls">
+        <button class="ctrl-btn" id="prevSlide" title="Previous Slide (Left Arrow)">&larr;</button>
+        <span class="deck-counter" id="deckCounter">01 / 14</span>
+        <button class="ctrl-btn" id="nextSlide" title="Next Slide (Right Arrow / Space)">&rarr;</button>
+    </div>
+
+    <!-- ==========================================
+         JAVASCRIPT CONTROLLER
+         ========================================== -->
+    <script>
+        class SlidePresentation {
+            constructor() {
+                this.slides = document.querySelectorAll('.slide');
+                this.currentSlide = 0;
+                this.stage = document.getElementById('deckStage');
+                this.counter = document.getElementById('deckCounter');
+
+                this.setupStageScale();
+                this.setupKeyboardNav();
+                this.setupTouchNav();
+                this.setupButtons();
+                this.showSlide(0);
+            }
+
+            setupStageScale() {
+                const scale = () => {
+                    const factor = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+                    const x = (window.innerWidth - 1920 * factor) / 2;
+                    const y = (window.innerHeight - 1080 * factor) / 2;
+                    this.stage.style.transform = `translate(${x}px, ${y}px) scale(${factor})`;
+                };
+                scale();
+                window.addEventListener('resize', scale);
+            }
+
+            setupButtons() {
+                document.getElementById('prevSlide').addEventListener('click', () => this.prev());
+                document.getElementById('nextSlide').addEventListener('click', () => this.next());
+            }
+
+            setupKeyboardNav() {
+                window.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+                        e.preventDefault();
+                        this.next();
+                    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                        e.preventDefault();
+                        this.prev();
+                    } else if (e.key === 'Home') {
+                        e.preventDefault();
+                        this.showSlide(0);
+                    } else if (e.key === 'End') {
+                        e.preventDefault();
+                        this.showSlide(this.slides.length - 1);
+                    }
+                });
+            }
+
+            setupTouchNav() {
+                let touchStartX = 0;
+                let touchEndX = 0;
+                window.addEventListener('touchstart', (e) => {
+                    touchStartX = e.changedTouches[0].screenX;
+                }, { passive: true });
+
+                window.addEventListener('touchend', (e) => {
+                    touchEndX = e.changedTouches[0].screenX;
+                    const diff = touchStartX - touchEndX;
+                    if (Math.abs(diff) > 50) {
+                        if (diff > 0) this.next();
+                        else this.prev();
+                    }
+                }, { passive: true });
+            }
+
+            showSlide(index) {
+                this.currentSlide = Math.max(0, Math.min(index, this.slides.length - 1));
+                this.slides.forEach((slide, i) => {
+                    slide.classList.toggle('active', i === this.currentSlide);
+                    slide.classList.toggle('visible', i === this.currentSlide);
+                });
+
+                const cur = (this.currentSlide + 1 < 10 ? '0' : '') + (this.currentSlide + 1);
+                const total = (this.slides.length < 10 ? '0' : '') + this.slides.length;
+                this.counter.textContent = `${cur} / ${total}`;
+            }
+
+            next() {
+                if (this.currentSlide < this.slides.length - 1) {
+                    this.showSlide(this.currentSlide + 1);
+                }
+            }
+
+            prev() {
+                if (this.currentSlide > 0) {
+                    this.showSlide(this.currentSlide - 1);
+                }
+            }
+        }
+
+        new SlidePresentation();
+    </script>
+</body>
+
+</html>
